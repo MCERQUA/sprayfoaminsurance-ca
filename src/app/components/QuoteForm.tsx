@@ -434,8 +434,65 @@ export function QuoteForm({ embed = false }: QuoteFormProps = {}) {
       },
     };
     (window as unknown as { __SPF_QUOTE_FORM__: typeof api }).__SPF_QUOTE_FORM__ = api;
-    window.dispatchEvent(new CustomEvent("spf-quote-ready", { detail: { formName: api.formName } }));
+
+    // ── postMessage bridge for cross-origin parents (JamBot canvas iframe) ─
+    // Protocol:
+    //   parent → iframe: { type:"spf-quote", method:"setField"|"submit"|...,
+    //                      args:[...], reqId?:string }
+    //   iframe → parent: { type:"spf-quote-response", reqId, ok, result|error }
+    //                    { type:"spf-quote-event", event, detail }
+    const postToParent = (payload: unknown) => {
+      if (window.parent && window.parent !== window) {
+        try { window.parent.postMessage(payload, "*"); } catch { /* ignore */ }
+      }
+    };
+
+    const messageHandler = (e: MessageEvent) => {
+      const msg = e.data as { type?: string; method?: string; args?: unknown[]; reqId?: string };
+      if (!msg || msg.type !== "spf-quote" || !msg.method) return;
+      const fn = (api as unknown as Record<string, unknown>)[msg.method];
+      const respond = (payload: unknown) => {
+        // Reply to the source window if available, else broadcast to parent
+        const target = (e.source as Window | null) || window.parent;
+        try { target?.postMessage(payload, "*"); } catch { /* ignore */ }
+      };
+      if (typeof fn !== "function") {
+        respond({ type: "spf-quote-response", reqId: msg.reqId, ok: false, error: `unknown method: ${msg.method}` });
+        return;
+      }
+      try {
+        const out = (fn as (...a: unknown[]) => unknown).apply(api, msg.args || []);
+        Promise.resolve(out)
+          .then((result) => respond({ type: "spf-quote-response", reqId: msg.reqId, ok: true, result }))
+          .catch((err) => respond({ type: "spf-quote-response", reqId: msg.reqId, ok: false, error: String(err) }));
+      } catch (err) {
+        respond({ type: "spf-quote-response", reqId: msg.reqId, ok: false, error: String(err) });
+      }
+    };
+
+    const eventForwarders: Record<string, (e: Event) => void> = {};
+    for (const evName of ["spf-quote-ready", "spf-quote-submit-start", "spf-quote-submit-success", "spf-quote-submit-error"]) {
+      const handler = (e: Event) => {
+        postToParent({
+          type: "spf-quote-event",
+          event: evName.replace("spf-quote-", ""),
+          detail: (e as CustomEvent).detail ?? null,
+        });
+      };
+      eventForwarders[evName] = handler;
+      window.addEventListener(evName, handler);
+    }
+    window.addEventListener("message", messageHandler);
+
+    // Fire ready (locally + to parent in case parent missed CustomEvent timing)
+    window.dispatchEvent(new CustomEvent("spf-quote-ready", { detail: { formName: api.formName, version: api.version } }));
+    postToParent({ type: "spf-quote-event", event: "ready", detail: { formName: api.formName, version: api.version } });
+
     return () => {
+      window.removeEventListener("message", messageHandler);
+      for (const [evName, h] of Object.entries(eventForwarders)) {
+        window.removeEventListener(evName, h);
+      }
       delete (window as unknown as { __SPF_QUOTE_FORM__?: typeof api }).__SPF_QUOTE_FORM__;
     };
   }, []);
