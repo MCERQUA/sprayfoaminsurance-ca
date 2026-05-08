@@ -17,7 +17,7 @@ export function Hero() {
       </video>
 
       {/* Subtle dark overlay — perceptible but light, to keep white text readable */}
-      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+      <div className="absolute inset-0 bg-black/55 pointer-events-none" />
 
       {/* Radial amber glow on top */}
       <div
