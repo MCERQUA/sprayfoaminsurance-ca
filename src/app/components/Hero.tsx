@@ -16,8 +16,8 @@ export function Hero() {
         <source src="/images/hero-video.mp4" type="video/mp4" />
       </video>
 
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+      {/* Light overlay — keeps white text readable without crushing the video */}
+      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
 
       {/* Radial amber glow on top */}
       <div
