@@ -262,96 +262,197 @@ export function QuoteForm({ embed = false }: QuoteFormProps = {}) {
     if (error) setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = useCallback((opts?: { skipScroll?: boolean }): { ok: boolean; errors: Errors } => {
     const requiredFields: (keyof FormData)[] = [
       "businessName", "firstName", "lastName", "email", "phone",
       "province", "postalCode", "yearsInBusiness", "numberOfEmployees",
       "annualRevenue", "typeOfWork", "coverageNeeded", "pipedaConsent",
     ];
     const newErrors: Errors = {};
+    const data = formDataRef.current;
     for (const field of requiredFields) {
-      const err = validateField(field, formData[field]);
+      const err = validateField(field, data[field]);
       if (err) newErrors[field] = err;
     }
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
-      // Scroll to first error
-      const firstErrorKey = Object.keys(newErrors)[0];
-      const el = document.getElementById(`field-${firstErrorKey}`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return false;
+      if (!opts?.skipScroll) {
+        const firstErrorKey = Object.keys(newErrors)[0];
+        const el = document.getElementById(`field-${firstErrorKey}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return { ok: false, errors: newErrors };
     }
-    return true;
-  };
+    return { ok: true, errors: {} };
+  }, []);
+
+  const submitForm = useCallback(
+    async (opts?: { skipScroll?: boolean }): Promise<{ ok: boolean; message: string; errors?: Errors; httpStatus?: number }> => {
+      const v = validateForm(opts);
+      if (!v.ok) {
+        return { ok: false, message: "Validation failed.", errors: v.errors };
+      }
+      setIsSubmitting(true);
+      const data = formDataRef.current;
+      try {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("spf-quote-submit-start"));
+        }
+        const response = await fetch("/__forms.html", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            "form-name": "canadian-spray-foam-quote",
+            "bot-field": "",
+            businessName: data.businessName,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            province: data.province,
+            postalCode: data.postalCode,
+            yearsInBusiness: data.yearsInBusiness,
+            numberOfEmployees: data.numberOfEmployees,
+            annualRevenue: data.annualRevenue,
+            typeOfWork: data.typeOfWork.join(", "),
+            coverageNeeded: data.coverageNeeded.join(", "),
+            currentCarrier: data.currentCarrier,
+            renewalDate: data.renewalDate,
+            additionalNotes: data.additionalNotes,
+            pipedaConsent: data.pipedaConsent ? "yes" : "no",
+          }).toString(),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // Fire-and-forget webhook
+        fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...data,
+            typeOfWork: data.typeOfWork.join(", "),
+            coverageNeeded: data.coverageNeeded.join(", "),
+            pipedaConsent: data.pipedaConsent ? "yes" : "no",
+          }),
+        }).catch(() => {});
+
+        const successMsg =
+          "Thank you! We have received your quote request. Our team will contact you within 24 hours with your customised coverage options.";
+        setSubmitStatus("success");
+        setSubmitMessage(successMsg);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("spf-quote-submit-success", { detail: { httpStatus: response.status } }));
+        }
+        return { ok: true, message: successMsg, httpStatus: response.status };
+      } catch (err) {
+        const errorMsg =
+          "Sorry, there was an error submitting your request. Please try again or call us at 1-888-SPF-QUOTE.";
+        setSubmitStatus("error");
+        setSubmitMessage(errorMsg);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("spf-quote-submit-error", { detail: { error: String(err) } }));
+        }
+        return { ok: false, message: errorMsg };
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [validateForm],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/__forms.html", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          "form-name": "canadian-spray-foam-quote",
-          "bot-field": "",
-          businessName: formData.businessName,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          province: formData.province,
-          postalCode: formData.postalCode,
-          yearsInBusiness: formData.yearsInBusiness,
-          numberOfEmployees: formData.numberOfEmployees,
-          annualRevenue: formData.annualRevenue,
-          typeOfWork: formData.typeOfWork.join(", "),
-          coverageNeeded: formData.coverageNeeded.join(", "),
-          currentCarrier: formData.currentCarrier,
-          renewalDate: formData.renewalDate,
-          additionalNotes: formData.additionalNotes,
-          pipedaConsent: formData.pipedaConsent ? "yes" : "no",
-        }).toString(),
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      // Fire-and-forget webhook
-      fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          typeOfWork: formData.typeOfWork.join(", "),
-          coverageNeeded: formData.coverageNeeded.join(", "),
-          pipedaConsent: formData.pipedaConsent ? "yes" : "no",
-        }),
-      }).catch(() => {});
-
-      setSubmitStatus("success");
-      setSubmitMessage(
-        "Thank you! We have received your quote request. Our team will contact you within 24 hours with your customised coverage options."
-      );
-    } catch {
-      setSubmitStatus("error");
-      setSubmitMessage(
-        "Sorry, there was an error submitting your request. Please try again or call us at 1-888-SPF-QUOTE."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submitForm();
   };
+
+  // ── Voice-agent / canvas programmatic API ───────────────────────────────
+  // Mounts window.__SPF_QUOTE_FORM__ so a parent (voice agent in canvas iframe,
+  // or the same-page agent) can fill + submit without keyboard input.
+  const submitRef = useRef(submitForm);
+  useEffect(() => { submitRef.current = submitForm; }, [submitForm]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const FIELD_NAMES: (keyof FormData)[] = [
+      "businessName", "firstName", "lastName", "email", "phone",
+      "province", "postalCode", "yearsInBusiness", "numberOfEmployees",
+      "annualRevenue", "typeOfWork", "coverageNeeded", "currentCarrier",
+      "renewalDate", "additionalNotes", "pipedaConsent",
+    ];
+    const api = {
+      version: "1.0.0",
+      formName: "canadian-spray-foam-quote",
+      fields: FIELD_NAMES,
+      getOptions: () => ({
+        provinces: PROVINCES,
+        yearsInBusiness: YEARS_OPTIONS,
+        numberOfEmployees: EMPLOYEES_OPTIONS,
+        annualRevenue: REVENUE_OPTIONS,
+        typeOfWork: WORK_TYPES,
+        coverageNeeded: COVERAGE_TYPES,
+      }),
+      getState: () => ({ ...formDataRef.current }),
+      setField: (name: keyof FormData, value: string | boolean | string[]) => {
+        setFormData((prev) => ({ ...prev, [name]: value as never }));
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
+      },
+      setCheckboxGroup: (name: "typeOfWork" | "coverageNeeded", values: string[]) => {
+        setFormData((prev) => ({ ...prev, [name]: values }));
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
+      },
+      setConsent: (consented: boolean) => {
+        setFormData((prev) => ({ ...prev, pipedaConsent: consented }));
+        setErrors((prev) => ({ ...prev, pipedaConsent: undefined }));
+      },
+      fillAll: (partial: Partial<FormData>) => {
+        setFormData((prev) => ({ ...prev, ...partial }));
+        setErrors({});
+      },
+      validate: () => {
+        // Use a temporary closure that reads the latest closure of validateForm
+        // via submitRef → not quite, validate has its own ref. Inline here:
+        const requiredFields: (keyof FormData)[] = [
+          "businessName", "firstName", "lastName", "email", "phone",
+          "province", "postalCode", "yearsInBusiness", "numberOfEmployees",
+          "annualRevenue", "typeOfWork", "coverageNeeded", "pipedaConsent",
+        ];
+        const newErrors: Errors = {};
+        const data = formDataRef.current;
+        for (const field of requiredFields) {
+          const err = validateField(field, data[field]);
+          if (err) newErrors[field] = err;
+        }
+        return { ok: Object.keys(newErrors).length === 0, errors: newErrors };
+      },
+      submit: (opts?: { skipScroll?: boolean }) => submitRef.current({ skipScroll: true, ...opts }),
+      reset: () => {
+        setFormData(initialFormData);
+        setErrors({});
+        setSubmitStatus("idle");
+        setSubmitMessage("");
+      },
+    };
+    (window as unknown as { __SPF_QUOTE_FORM__: typeof api }).__SPF_QUOTE_FORM__ = api;
+    window.dispatchEvent(new CustomEvent("spf-quote-ready", { detail: { formName: api.formName } }));
+    return () => {
+      delete (window as unknown as { __SPF_QUOTE_FORM__?: typeof api }).__SPF_QUOTE_FORM__;
+    };
+  }, []);
 
   // ---- Render ----
 
   return (
-    <section id="quote" className="py-16 md:py-24 px-4">
+    <section id="quote" className={embed ? "py-6 md:py-8 px-4" : "py-16 md:py-24 px-4"}>
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-white text-center mb-4">Get Your Free Quote</h2>
-        <p className="text-[#9ca3af] text-center mb-8">
-          Tell us about your spray foam business and we will get back to you within hours.
-        </p>
+        {!embed && (
+          <>
+            <h2 className="text-3xl font-bold text-white text-center mb-4">Get Your Free Quote</h2>
+            <p className="text-[#9ca3af] text-center mb-8">
+              Tell us about your spray foam business and we will get back to you within hours.
+            </p>
+          </>
+        )}
 
         {/* Success state */}
         {submitStatus === "success" ? (
