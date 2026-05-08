@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+interface QuoteFormProps {
+  /** When true, suppresses the section heading + tightens padding for full-screen / iframe embed use. */
+  embed?: boolean;
+}
 
 interface FormData {
   businessName: string;
@@ -214,12 +219,15 @@ function validateField(name: keyof FormData, value: FormData[keyof FormData]): s
 
 // ---- Main Component ----
 
-export function QuoteForm() {
+export function QuoteForm({ embed = false }: QuoteFormProps = {}) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [submitMessage, setSubmitMessage] = useState("");
+
+  const formDataRef = useRef(formData);
+  useEffect(() => { formDataRef.current = formData; }, [formData]);
 
   const clearError = (name: keyof FormData) => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
