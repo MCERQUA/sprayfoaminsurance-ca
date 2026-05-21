@@ -192,3 +192,36 @@ images: {
 
 **Headline Finding**: Site has strong conversion focus (clear CTAs, embedded quote form) but lacks SEO infrastructure (no schema, sparse internal linking, thin content) that would help organic discovery and competitive rankings in the niche market.
 
+---
+
+## 9. Structured Data Update — 2026-05-21
+
+### Files Changed
+- `src/app/layout.tsx` — added three inline JSON-LD `<script type="application/ld+json">` blocks injected into `<body>` of the root layout
+- `src/app/quote/page.tsx` — added inline JSON-LD `<script>` for breadcrumbs
+- `public/sitemap.xml` — added `/quote` URL with `lastmod` on both entries
+
+### Schema Types Added
+| Schema | File | Notes |
+|---|---|---|
+| `InsuranceAgency` (`@id: …/#organization`) | `layout.tsx` | name, url, description, telephone (+1-888-773-8686), email (quotes@sprayfoaminsurance.ca), `areaServed: Country/Canada`, `knowsAbout` (10 SPF-insurance topics drawn from real on-page copy: isocyanate/MDI, CAN/ULC-S705.2, WSIB/CNESST/WorkSafeBC, etc.) |
+| `WebSite` (`@id: …/#website`) | `layout.tsx` | publisher references the organization `@id`; `inLanguage: en-CA`. No `potentialAction` (site has no search). |
+| `Service` (`@id: …/#service`) | `layout.tsx` | `serviceType: "Commercial Insurance for Spray Foam Contractors"`, `hasOfferCatalog` enumerates the six coverages explicitly listed in `CoverageGrid.tsx`: Commercial General Liability, Pollution Liability, Products & Completed Operations, Commercial Auto, Workers Compensation Coordination, Surety Bonds |
+| `BreadcrumbList` | `quote/page.tsx` | Home → Get a Quote |
+
+### Schemas NOT Added (and why)
+- **FAQPage**: site has no FAQ section anywhere on either page. Not fabricating Q&A pairs.
+- **LocalBusiness**: no public street address surfaced on the site; would require fabricating data. `InsuranceAgency` (which extends LocalBusiness without requiring `address`) is the better fit given only phone/email/areaServed are public.
+- **WebSite potentialAction (SearchAction)**: no site search exists.
+
+### Pattern Chosen
+Inline `<script type="application/ld+json" dangerouslySetInnerHTML={...}>` injected into the layout `<body>`. Chosen over `metadata.other` because the latter requires hand-encoding strings and breaks for multi-block JSON-LD. Pattern is static-export-safe (`output: 'export'`).
+
+### Sitemap Fix
+- Added `<url>` entry for `https://sprayfoaminsurance.ca/quote` (priority 0.9, monthly changefreq)
+- Added `<lastmod>2026-05-21</lastmod>` to both entries
+
+### Verification
+- `npx tsc --noEmit` → clean (no type errors)
+- JSON-LD validates as well-formed JSON (serialized via `JSON.stringify`, no manual escaping)
+
