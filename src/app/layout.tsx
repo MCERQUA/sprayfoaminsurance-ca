@@ -12,13 +12,45 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://sprayfoaminsurance.ca";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Spray Foam Insurance Canada | Commercial Insurance for SPF Contractors",
   description:
-    "Specialized commercial insurance for Canadian spray foam contractors. CGL, pollution liability, workers’ comp, and more. Get a free quote today.",
+    "Specialized commercial insurance for Canadian spray foam contractors. CGL, pollution liability, workers' comp, and more. Get a free quote today.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    title: "Spray Foam Insurance Canada | Commercial Insurance for SPF Contractors",
+    description:
+      "Specialized commercial insurance for Canadian spray polyurethane foam (SPF) contractors. CGL, pollution liability, workers' comp, commercial auto, and surety bonds.",
+    siteName: "Spray Foam Insurance Canada",
+    locale: "en_CA",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Spray Foam Insurance Canada — Commercial insurance for Canadian SPF contractors",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Spray Foam Insurance Canada | Commercial Insurance for SPF Contractors",
+    description:
+      "CGL, pollution liability, workers' comp, commercial auto, and surety bonds for Canadian SPF contractors. Quote in minutes.",
+    images: ["/og-image.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
-
-const SITE_URL = "https://sprayfoaminsurance.ca";
 
 // Organization / InsuranceAgency schema — describes the brokerage itself.
 const insuranceAgencyJsonLd = {
