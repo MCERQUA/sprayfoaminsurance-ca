@@ -225,3 +225,13 @@ Inline `<script type="application/ld+json" dangerouslySetInnerHTML={...}>` injec
 - `npx tsc --noEmit` → clean (no type errors)
 - JSON-LD validates as well-formed JSON (serialized via `JSON.stringify`, no manual escaping)
 
+## Round 3 — repaired 2026-05-22
+- **Domain: confirmed** `https://sprayfoaminsurance.ca` (in source code + sitemap from prior rounds).
+- **`src/app/layout.tsx`** — extended `Metadata` export with `metadataBase`, `alternates.canonical` (`/`), full `openGraph` block (type, url, title, description, siteName, locale `en_CA`, 1200×630 image at `/og-image.jpg` with alt), Twitter `summary_large_image` card, and explicit `robots: { index, follow }`. Fixed an existing curly-apostrophe in the description (`workers' comp` was `workers’ comp`) for ASCII consistency.
+- **`src/app/quote/page.tsx`** — added `alternates.canonical: "/quote"`, `openGraph`, and `twitter` Metadata blocks matching the layout pattern. Retained the existing `robots.index: true` since the page is intentionally indexable.
+- **`src/app/not-found.tsx`** — created. Branded 404 component using the existing CSS-var theme, with two CTAs (Home, Get a Free Quote), `robots: { index: false, follow: true }`. Next.js will render this as `/out/404.html` on next build via the static export.
+- **`public/sitemap.xml`** — bumped both `lastmod` entries from 2026-05-21 → 2026-05-22.
+- **NOT regenerated `/out/`** — Tier 2 sweep only touches source. `npm run build` is the deploy step (Netlify handles on push); built `/out/404.html`, `/out/_not-found.html`, etc. will be replaced on next Netlify build.
+- **Skipped:** §7 items 5 (footer Privacy/Terms placeholder links — content/legal scope), 6 (H1 on /quote — content/UX), 7 (content expansion — content scope), 9 (sitemap lastmod was already added in Round 2; just bumped date). 
+- **Validation:** schema additions are TypeScript-typed via `Metadata` — caught at build time. JSON-LD blocks unchanged. Sitemap remains well-formed.
+
