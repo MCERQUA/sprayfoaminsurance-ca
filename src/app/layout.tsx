@@ -63,6 +63,13 @@ const insuranceAgencyJsonLd = {
     "Specialized commercial insurance brokerage for Canadian spray polyurethane foam (SPF) contractors. CGL, pollution liability, workers' comp, commercial auto, and surety bonds tailored to SPF operations.",
   telephone: "+1-888-773-8686",
   email: "quotes@sprayfoaminsurance.ca",
+  sameAs: [
+    "https://sprayfoaminsurance.ca",
+  ],
+  founder: {
+    "@type": "Person",
+    name: "Josh Cotner",
+  },
   areaServed: {
     "@type": "Country",
     name: "Canada",

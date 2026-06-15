@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION              = "20"
   NETLIFY_NEXT_PLUGIN_SKIP  = "true"
+  NEXT_DISABLE_TURBOPACK    = "1"
 
 # /quote/* — standalone form page designed to be iframe-embedded inside the
 # JamBot voice-agent canvas. Drop X-Frame-Options DENY (Netlify's default for
