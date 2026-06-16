@@ -61,8 +61,16 @@ const insuranceAgencyJsonLd = {
   url: SITE_URL,
   description:
     "Specialized commercial insurance brokerage for Canadian spray polyurethane foam (SPF) contractors. CGL, pollution liability, workers' comp, commercial auto, and surety bonds tailored to SPF operations.",
-  telephone: "+1-888-773-8686",
+  telephone: "+18449675247",
   email: "quotes@sprayfoaminsurance.ca",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "12220 E Riggs Road Suite #105",
+    addressLocality: "Chandler",
+    addressRegion: "AZ",
+    postalCode: "85249",
+    addressCountry: "US",
+  },
   sameAs: [
     "https://sprayfoaminsurance.ca",
   ],

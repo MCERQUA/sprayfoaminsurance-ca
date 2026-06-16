@@ -111,7 +111,7 @@ const COVERAGE_TYPES = [
 ];
 
 const WEBHOOK_URL =
-  "https://josh.jam-bot.com/social-api/api/leads/webhook/netlify?tenant=josh&site=sprayfoaminsurance-ca";
+  "https://josh.jam-bot.com/social-api/api/leads/webhook/netlify?tenant=josh&site=sprayfoaminsulation-ca";
 
 // --- Shared field styles ---
 const inputBase =
