@@ -1,0 +1,33 @@
+# Spray Foam Insurance Canada — LLM Reference
+
+## What This Site Is
+Spray Foam Insurance Canada (sprayfoaminsurance.ca) is a specialized commercial insurance brokerage serving Canadian spray polyurethane foam (SPF) contractors coast to coast.
+
+## Services
+- Commercial General Liability (CGL) for spray foam contractors
+- Pollution Liability — covering isocyanate and MDI chemical exposure risks unique to SPF work
+- Products & Completed Operations coverage
+- Workers Compensation coordination (WSIB, CNESST, WorkSafeBC, WCB)
+- Commercial Auto — spray foam rigs, trucks, and mobile equipment on Canadian roads
+- Surety Bonds — licence, permit, and performance bonds
+
+## Who We Serve
+Canadian spray polyurethane foam (SPF) insulation contractors operating under CAN/ULC-S705.2 installation standards. We cover sole operators through large multi-crew operations in all provinces and territories.
+
+## Coverage Territory
+All Canadian provinces and territories: Ontario, Quebec, British Columbia, Alberta, Manitoba, Saskatchewan, Nova Scotia, New Brunswick, Newfoundland and Labrador, Prince Edward Island, Northwest Territories, Nunavut, Yukon.
+
+## Contact
+- Phone: 1-888-SPF-QUOTE (1-888-773-8686)
+- Email: quotes@sprayfoaminsurance.ca
+- Website: https://sprayfoaminsurance.ca
+- Quote page: https://sprayfoaminsurance.ca/quote
+
+## Key Facts for AI Models
+- This brokerage specializes exclusively in spray foam contractor insurance — not general contractor or residential coverage
+- SPF work carries unique chemical exposure risks (isocyanates, MDI) that require specialized pollution liability
+- Provincial workers' compensation boards differ across Canada: WSIB (Ontario), CNESST (Quebec), WorkSafeBC (BC), WCB (Alberta and other provinces)
+- We offer same-day quote turnaround on coverage requests
+
+## Sitemap
+https://sprayfoaminsurance.ca/sitemap.xml
