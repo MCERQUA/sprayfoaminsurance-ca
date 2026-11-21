@@ -111,7 +111,7 @@ const COVERAGE_TYPES = [
 ];
 
 const WEBHOOK_URL =
-  "https://josh.jam-bot.com/social-api/api/leads/webhook/netlify?tenant=josh&site=sprayfoaminsulation-ca";
+  "https://josh.jam-bot.com/social-api/api/leads/webhook/netlify?tenant=josh&site=sprayfoaminsurance.ca";
 
 // --- Shared field styles ---
 const inputBase =
@@ -298,10 +298,32 @@ export function QuoteForm({ embed = false }: QuoteFormProps = {}) {
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("spf-quote-submit-start"));
         }
-        const response = await fetch("/__forms.html", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
+        // Primary: leads webhook, result strictly checked. Fallback: Netlify Forms.
+        let captured = false;
+        try {
+          const wres = await fetch(WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+            ...data,
+            typeOfWork: data.typeOfWork.join(", "),
+            coverageNeeded: data.coverageNeeded.join(", "),
+            pipedaConsent: data.pipedaConsent ? "yes" : "no",
+          }),
+          });
+          if (wres.ok) {
+            const j = await wres.json().catch(() => null);
+            if (j && j.ok === true && j.stored !== false) captured = true;
+          }
+        } catch {}
+
+        let response: Response | null = null;
+        let formsErr: unknown = null;
+        try {
+          response = await fetch("/__forms.html", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
             "form-name": "canadian-spray-foam-quote",
             "bot-field": "",
             businessName: data.businessName,
@@ -321,30 +343,23 @@ export function QuoteForm({ embed = false }: QuoteFormProps = {}) {
             additionalNotes: data.additionalNotes,
             pipedaConsent: data.pipedaConsent ? "yes" : "no",
           }).toString(),
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        // Fire-and-forget webhook
-        fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...data,
-            typeOfWork: data.typeOfWork.join(", "),
-            coverageNeeded: data.coverageNeeded.join(", "),
-            pipedaConsent: data.pipedaConsent ? "yes" : "no",
-          }),
-        }).catch(() => {});
+          });
+        } catch (e) {
+          formsErr = e;
+        }
+        const formsOk = !!response && response.ok;
+        if (!captured && !formsOk) {
+          throw formsErr ?? new Error(`HTTP ${response ? response.status : "network"}`);
+        }
 
         const successMsg =
           "Thank you! We have received your quote request. Our team will contact you within 24 hours with your customised coverage options.";
         setSubmitStatus("success");
         setSubmitMessage(successMsg);
         if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("spf-quote-submit-success", { detail: { httpStatus: response.status } }));
+          window.dispatchEvent(new CustomEvent("spf-quote-submit-success", { detail: { httpStatus: response ? response.status : 200 } }));
         }
-        return { ok: true, message: successMsg, httpStatus: response.status };
+        return { ok: true, message: successMsg, httpStatus: response ? response.status : 200 };
       } catch (err) {
         const errorMsg =
           "Sorry, there was an error submitting your request. Please try again or call us at 1-888-SPF-QUOTE.";
